@@ -59,10 +59,24 @@ uint8_t get_operand(char* line, int operand_number) {
         }
         else if (current_char == '#') {
             ++operands_encountered;
+            char str_operand[3];
             if (operands_encountered == operand_number) {
+                // move forward to beginning of immediate value
+                ++i;
+                int beginning_of_operand = i;
+                current_char = line[beginning_of_operand];
                 int number_of_digits = 0;
-                int current_position = i + 1;
-                uint8_t operand = immediate_value;
+                // get digits after #
+                while (current_char >= 48 && current_char <= 57) {
+                    ++number_of_digits;
+                    ++i;
+                    current_char = line[i];
+                }
+                // form number into string
+                for (int j = beginning_of_operand; j < beginning_of_operand + number_of_digits; ++j) {
+                    strncat(str_operand, &line[j], 1);
+                }
+                uint8_t operand = atoi(str_operand);
                 return operand;
             }
         }

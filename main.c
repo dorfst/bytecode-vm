@@ -4,7 +4,7 @@
 #include "parse.h"
 
 int main() {
-    char* string = "ADD r1 r2 #3";
+    char* string = "ADD r1 r2 #32";
 
     int opcode = get_opcode(string);
     uint8_t operand1 = get_operand(string, 1);
