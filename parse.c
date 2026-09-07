@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 
-const char* instructions[] = {"NOP", "ADD", "SUB", "MUL", "DIV", "MOV", "LDR", "STR"};
+const char* instructions[] = {"NOP", "ADD", "SUB", "MUL", "DIV", "MOV", "LDR", "STR", "JMP"};
 
 int match_to_opcode(char* string) {
     for (int i = 0; i < sizeof(instructions) / sizeof(instructions[0]); ++i) {
@@ -40,47 +41,106 @@ char* get_instruction(char* buffer) {
     return instruction_buffer;
 }
 
-// valid operands are r0-r9 or #0 to #255
-uint8_t get_operand(char* line, int operand_number) {
-    int i = 0;
-    int operands_encountered = 0;
-    char current_char = line[i];
+// valid operands are r0-r9 or #0 to #127
+// uint8_t get_operand(char* line, int operand_number, struct line* line_struct) {
+//     int i = 0;
+//     int operands_encountered = 0;
+//     char current_char = line[i];
+//     while (current_char != '\0') {
+//         current_char = line[i];
+//         if (current_char == 'r') {
+//             ++operands_encountered;
+//             if (operands_encountered == operand_number) {
+//                 char next_char = line[i + 1];
+//                 int register_number = atoi(&next_char);
+//                 // 1 bit for register flag, 7 bits for register identifier or immediate value
+//                 uint8_t operand = 0b10000000 + register_number;
+//                 return operand;
+//             }
+//         }
+//         else if (current_char == '#') {
+//             ++operands_encountered;
+//             char str_operand[3];
+//             if (operands_encountered == operand_number) {
+//                 // move forward to beginning of immediate value
+//                 ++i;
+//                 int beginning_of_operand = i;
+//                 current_char = line[beginning_of_operand];
+//                 int number_of_digits = 0;
+//                 // get digits after #
+//                 while (current_char >= 48 && current_char <= 57) {
+//                     ++number_of_digits;
+//                     ++i;
+//                     current_char = line[i];
+//                 }
+//                 // form number into string
+//                 for (int j = beginning_of_operand; j < beginning_of_operand + number_of_digits; ++j) {
+//                     strncat(str_operand, &line[j], 1);
+//                 }
+//                 uint8_t operand = atoi(str_operand);
+//                 return operand;
+//             }
+//         }
+//         ++i;
+//     }
+// }
+
+
+// how many operands are required for each opcode
+int operands_required(int opcode) {
+    if (opcode == 0) return 0;
+    if (opcode == 1) return 3;
+    if (opcode == 2) return 3;
+    if (opcode == 3) return 3;
+    if (opcode == 4) return 3;
+    if (opcode == 5) return 2;
+    if (opcode == 6) return 2;
+    if (opcode == 7) return 2;
+    if (opcode == 8) return 1;
+}
+
+// extract number from a larger string, start_index must be where the first numeric character is
+uint64_t get_number(char* buffer, int start_index) {
+    char current_char = buffer[start_index];
+    int num_of_chars = 0;
+    int current_index = start_index;
+
+    while (current_char >= 48 && current_char <= 57) {
+        ++num_of_chars;
+        ++current_index;
+        current_char = buffer[current_index];
+    }
+
+    // current_index will overshoot by 1
+    char* end = buffer + current_index - 1;
+
+    uint64_t number = strtoull(buffer + start_index, &end, 10);
+
+    return number;
+}
+
+int* get_operands(char* line, int opcode, struct line* line_struct) {
+    int num_operands = operands_required(opcode);
+    int line_index = 0;
+    char current_char = line[line_index];
+    int operand_number = 0;
+
     while (current_char != '\0') {
-        current_char = line[i];
+        current_char = line[line_index];
         if (current_char == 'r') {
-            ++operands_encountered;
-            if (operands_encountered == operand_number) {
-                char next_char = line[i + 1];
-                int register_number = atoi(&next_char);
-                // 1 bit for register flag, 7 bits for register identifier or immediate value
-                uint8_t operand = 0b10000000 + register_number;
-                return operand;
-            }
+            // get number expects first character to be numeric
+            uint64_t reg_number = get_number(line, line_index + 1);
+            line_struct->args[operand_number] = reg_number;
+            line_struct->is_register[operand_number] = true;
+            ++operand_number;
         }
-        else if (current_char == '#') {
-            ++operands_encountered;
-            char str_operand[3];
-            if (operands_encountered == operand_number) {
-                // move forward to beginning of immediate value
-                ++i;
-                int beginning_of_operand = i;
-                current_char = line[beginning_of_operand];
-                int number_of_digits = 0;
-                // get digits after #
-                while (current_char >= 48 && current_char <= 57) {
-                    ++number_of_digits;
-                    ++i;
-                    current_char = line[i];
-                }
-                // form number into string
-                for (int j = beginning_of_operand; j < beginning_of_operand + number_of_digits; ++j) {
-                    strncat(str_operand, &line[j], 1);
-                }
-                uint8_t operand = atoi(str_operand);
-                return operand;
-            }
+        if (current_char == '#') {
+            uint64_t number = get_number(line, line_index + 1);
+            line_struct->args[operand_number] = number;
+            line_struct->is_register[operand_number] = false;
+            ++operand_number;
         }
-        ++i;
+        ++line_index;
     }
 }
 
@@ -89,3 +149,18 @@ int get_opcode(char* line) {
     int opcode = match_to_opcode(instruction);
     return opcode;
 }
+
+// ignore if it's a label
+struct line parse_line(char* buffer) {
+    struct line line;
+    if (strchr(buffer, ':') != NULL) {
+        line.is_label = true;
+        return line;
+    }
+    line.is_label = false;
+    int opcode = get_opcode(buffer);
+    line.opcode = opcode;
+    get_operands(buffer, opcode, &line);
+    return line;
+}
+

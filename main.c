@@ -4,17 +4,23 @@
 #include "parse.h"
 
 int main() {
-    char* string = "ADD r1 r2 #32";
 
-    int opcode = get_opcode(string);
-    uint8_t operand1 = get_operand(string, 1);
-    uint8_t operand2 = get_operand(string, 2);
-    uint8_t operand3 = get_operand(string, 3);
+    FILE* fp = fopen("file.txt", "r");
+    if (fp == NULL) {
+        perror("failed to open");
+        return 1;
+    }
 
-    printf("%d\n", opcode);
-    printf("%d\n", operand1);
-    printf("%d\n", operand2);
-    printf("%d\n", operand3);
+    char line[256];
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        struct line instruction = parse_line(line);
+
+        printf("%d\n", instruction.opcode);
+        printf("%d\n", instruction.args[0]);
+        printf("%d\n", instruction.args[1]);
+        printf("%d\n", instruction.args[2]);
+
+    }
 
     return 0;
 }
