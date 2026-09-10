@@ -9,5 +9,6 @@ struct vm_state {
     uint64_t gp_registers[31];
     uint64_t heap_memory[256];
     uint64_t pc;
+    char** code_memory;
 };
 #endif

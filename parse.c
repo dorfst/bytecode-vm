@@ -1,11 +1,84 @@
 #include "parse.h"
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
-#include <stdbool.h>
 
+struct hash_table_node symbol_table[256];
 const char* instructions[] = {"NOP", "ADD", "SUB", "MUL", "DIV", "MOV", "LDR", "STR", "JMP"};
+
+// hashing for resolving labels
+unsigned long djb2(const char* str) {
+    unsigned long hash = 5381;
+    int c;
+    while ((c = *str++)) {
+        // hash = hash * 33 (32 + 1) + c
+        hash = ((hash << 5) + hash) + c;
+    }
+    return hash;
+}
+
+int search_linked_list(struct hash_table_node* head, char* label) {
+    if (head == NULL) {
+        // error
+        return -1;
+    }
+    struct hash_table_node* current = head;
+    while (current != NULL) {
+        if (strcmp(current->label, label) == 0) {
+            return current->line_number;
+        }
+        current = current->next;
+    }
+    // error
+    return -1;
+}
+
+int insert_into_linked_list(struct hash_table_node* head, struct hash_table_node* node_to_insert) {
+    if (head == NULL) {
+        // invalid head
+        return 1;
+    }
+    struct hash_table_node* current = head;
+    while (current->next != NULL) {
+        if (strcmp(current->label, node_to_insert->label) == 0) {
+            // duplicate
+            return -1;
+        }
+        current = current->next;
+    }
+
+    current->next = node_to_insert;
+    return 0;
+}
+
+int insert_into_hash_table(struct hash_table_node hash_table[], struct hash_table_node* node_to_insert) {
+    if (hash_table == NULL) {
+        return -1;
+    }
+    int index = djb2(node_to_insert->label) % 256;
+    if (hash_table[index].label == NULL) {
+        hash_table[index] = *node_to_insert;
+        return 0;
+    }
+    int result = insert_into_linked_list(&hash_table[index], node_to_insert);
+    return result;
+
+}
+
+int search_hash_table(struct hash_table_node hash_table[], char* label) {
+    if (hash_table == NULL) {
+        return -1;
+    }
+    int index = djb2(label) % 256;
+    if (hash_table[index].label == NULL) {
+        return -1;
+    }
+    int result = search_linked_list(&hash_table[index], label);
+    return result;
+
+}
 
 int match_to_opcode(char* string) {
     for (int i = 0; i < sizeof(instructions) / sizeof(instructions[0]); ++i) {
@@ -40,52 +113,6 @@ char* get_instruction(char* buffer) {
 
     return instruction_buffer;
 }
-
-// valid operands are r0-r9 or #0 to #127
-// uint8_t get_operand(char* line, int operand_number, struct line* line_struct) {
-//     int i = 0;
-//     int operands_encountered = 0;
-//     char current_char = line[i];
-//     while (current_char != '\0') {
-//         current_char = line[i];
-//         if (current_char == 'r') {
-//             ++operands_encountered;
-//             if (operands_encountered == operand_number) {
-//                 char next_char = line[i + 1];
-//                 int register_number = atoi(&next_char);
-//                 // 1 bit for register flag, 7 bits for register identifier or immediate value
-//                 uint8_t operand = 0b10000000 + register_number;
-//                 return operand;
-//             }
-//         }
-//         else if (current_char == '#') {
-//             ++operands_encountered;
-//             char str_operand[3];
-//             if (operands_encountered == operand_number) {
-//                 // move forward to beginning of immediate value
-//                 ++i;
-//                 int beginning_of_operand = i;
-//                 current_char = line[beginning_of_operand];
-//                 int number_of_digits = 0;
-//                 // get digits after #
-//                 while (current_char >= 48 && current_char <= 57) {
-//                     ++number_of_digits;
-//                     ++i;
-//                     current_char = line[i];
-//                 }
-//                 // form number into string
-//                 for (int j = beginning_of_operand; j < beginning_of_operand + number_of_digits; ++j) {
-//                     strncat(str_operand, &line[j], 1);
-//                 }
-//                 uint8_t operand = atoi(str_operand);
-//                 return operand;
-//             }
-//         }
-//         ++i;
-//     }
-// }
-
-
 // how many operands are required for each opcode
 int operands_required(int opcode) {
     if (opcode == 0) return 0;
@@ -119,13 +146,14 @@ uint64_t get_number(char* buffer, int start_index) {
     return number;
 }
 
-int* get_operands(char* line, int opcode, struct line* line_struct) {
+void get_operands(char* line, int opcode, struct line* line_struct) {
     int num_operands = operands_required(opcode);
+    line_struct->num_args = num_operands;
     int line_index = 0;
     char current_char = line[line_index];
     int operand_number = 0;
 
-    while (current_char != '\0') {
+    while (current_char != '\0' && operand_number < num_operands) {
         current_char = line[line_index];
         if (current_char == 'r') {
             // get number expects first character to be numeric
@@ -142,6 +170,21 @@ int* get_operands(char* line, int opcode, struct line* line_struct) {
         }
         ++line_index;
     }
+
+    for (int i = 3; i > num_operands; --i) {
+        line_struct->args[i - 1] = 0;
+        line_struct->is_register[i - 1] = false;
+    }
+}
+
+void get_label(char* line, struct line* line_struct) {
+    // "jmp "
+    const int offset = 4;
+    char* start = line + offset;
+    size_t len = strcspn(start, "\n");
+    line_struct->label = (char*)malloc(sizeof(char) * (len + 1));
+    strncpy(line_struct->label, start, len);
+    line_struct->label[len] = '\0';
 }
 
 int get_opcode(char* line) {
@@ -151,16 +194,39 @@ int get_opcode(char* line) {
 }
 
 // ignore if it's a label
-struct line parse_line(char* buffer) {
+struct line parse_line(char* buffer, int* line_number) {
     struct line line;
     if (strchr(buffer, ':') != NULL) {
         line.is_label = true;
+        char* colon = strchr(buffer, ':');
+        size_t length = colon - buffer;
+        char* label = (char*)malloc(sizeof(char) * (length + 1));
+        strncpy(label, buffer, length);
+        label[length] = '\0';
+        line.label = label;
+        struct hash_table_node label_node = {label, *line_number, NULL};
+        insert_into_hash_table(symbol_table, &label_node);
         return line;
     }
     line.is_label = false;
     int opcode = get_opcode(buffer);
     line.opcode = opcode;
-    get_operands(buffer, opcode, &line);
+    if (opcode != 8) {
+        get_operands(buffer, opcode, &line);
+    }
+    else if (opcode == 8) {
+        line.num_args = 1;
+        line.args[0] = 0;
+        line.args[1] = 0;
+        line.args[2] = 0;
+
+        line.is_register[0] = false;
+        line.is_register[1] = false;
+        line.is_register[2] = false;
+
+        get_label(buffer, &line);
+    }
+    (*line_number)++;
     return line;
 }
 
