@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "vm_state.h"
+
 extern const char* instructions[];
 extern struct hash_table_node symbol_table;
 
@@ -41,5 +43,33 @@ int serialise_line(struct line* line, FILE* fp) {
             fwrite(&zero_uint64, sizeof(uint64_t), 1, fp);
             return 0;
         }
+    }
+}
+
+
+void translate(const char* source, const char* out) {
+    struct line program[256];
+
+    FILE* fp = fopen(source, "r");
+    if (fp == NULL) {
+        perror("failed to open");
+        return;
+    }
+    int line_number_parsing = 0;
+    int line_number = 0;
+
+    FILE* output = fopen(out, "wb");
+
+    char line[256];
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        struct line instruction = parse_line(line, &line_number_parsing);
+        if (!instruction.is_label) {
+            program[line_number] = instruction;
+            ++line_number;
+        }
+    }
+
+    for (int i = 0; i < line_number; i++) {
+        serialise_line(&program[i], output);
     }
 }
