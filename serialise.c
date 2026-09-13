@@ -72,4 +72,7 @@ void translate(const char* source, const char* out) {
     for (int i = 0; i < line_number; i++) {
         serialise_line(&program[i], output);
     }
+
+    fclose(fp);
+    fclose(output);
 }

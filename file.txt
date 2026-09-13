@@ -1,9 +1,4 @@
-ADD r1, r2, r3
-ADD r1, r2, r3
-JMP thelabel
-ADD r1, r2, r3
-ADD r1, r2, r3
-thelabel:
-ADD r0, r3, #21
-MOV r2, #23
-JMP thelabel
+ADD r1, #23, #42
+ADD r1, r1, #4
+MOV r2, r1
+ADD r3, r1, r2
