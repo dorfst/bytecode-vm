@@ -1,0 +1,12 @@
+; Computes 6 * 7 two ways: directly with MUL, and manually via repeated ADD
+MUL r0, #6, #7
+MOV r1, #0
+MOV r2, #0
+loop:
+CMP r2, #7
+JEQ done
+ADD r1, r1, #6
+ADD r2, r2, #1
+JMP loop
+done:
+NOP

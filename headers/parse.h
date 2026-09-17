@@ -9,7 +9,8 @@
 
 struct line {
     bool is_label;
-    // used for jmp instruction as well as lines that are labels
+    bool is_comment;
+    // used for jump instructions
     char* label;
     uint8_t opcode;
     uint64_t args[3];
@@ -26,8 +27,8 @@ struct hash_table_node {
 unsigned long djb2(const char* str);
 int search_linked_list(struct hash_table_node* head, char* label);
 int insert_into_linked_list(struct hash_table_node* head, struct hash_table_node* node_to_insert);
-int insert_into_hash_table(struct hash_table_node hash_table[], struct hash_table_node* node_to_insert);
-int search_hash_table(struct hash_table_node hash_table[], char* label);
+int insert_into_hash_table(struct hash_table_node* hash_table[], struct hash_table_node* node_to_insert);
+int search_hash_table(struct hash_table_node* hash_table[], char* label);
 int match_to_opcode(char* string);
 char* get_instruction(char* buffer);
 int operands_required(int opcode);

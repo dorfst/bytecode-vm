@@ -1,4 +1,6 @@
-#include "vm_state.h"
+#include "../headers/vm_state.h"
+#include <stdbool.h>
+#include <stdlib.h>
 
 int instruction_count(FILE* bytecode_file) {
     fseek(bytecode_file, 0, SEEK_END);
@@ -27,6 +29,12 @@ void load_program(struct vm_state* vm_state, FILE* bytecode_file) {
     }
 }
 
+void reset_comparison_flags(struct vm_state* vm_state) {
+    vm_state->comparison_flags[0] = false;
+    vm_state->comparison_flags[1] = false;
+    vm_state->comparison_flags[2] = false;
+}
+
 
 void init_vm_state(struct vm_state* vm_state, FILE* bytecode_file) {
     load_program(vm_state, bytecode_file);
@@ -37,5 +45,11 @@ void init_vm_state(struct vm_state* vm_state, FILE* bytecode_file) {
         vm_state->heap_memory[i] = 0;
     }
     vm_state->pc = 0;
+
+    reset_comparison_flags(vm_state);
+}
+
+void cleanup_vm_state(struct vm_state *vm_state) {
+    free(vm_state->program);
 }
 

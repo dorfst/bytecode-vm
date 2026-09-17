@@ -2,7 +2,7 @@
 #define VM_STATE
 #include <stdio.h>
 #include <stdint.h>
-#include <stdlib.h>
+#include "stdbool.h"
 
 struct instruction {
     uint8_t opcode;
@@ -16,10 +16,14 @@ struct vm_state {
     uint64_t pc;
     int instruction_count;
     struct instruction* program;
+    // EQ, GT, LT
+    bool comparison_flags[3];
 };
 
 int instruction_count(FILE* bytecode_file);
 void load_program(struct vm_state* vm_state, FILE* bytecode_file);
+void reset_comparison_flags(struct vm_state* vm_state);
 void init_vm_state(struct vm_state* vm_state, FILE* bytecode_file);
+void cleanup_vm_state(struct vm_state* vm_state);
 
 #endif

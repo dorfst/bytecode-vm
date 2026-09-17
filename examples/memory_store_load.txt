@@ -1,0 +1,5 @@
+; Stores a value in memory, then loads it back into a different register
+MOV r0, #99
+STR #10, r0
+LDR r1, #10
+NOP

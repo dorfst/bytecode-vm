@@ -1,6 +1,6 @@
-#include "execute.h"
-#include "parse.h"
-#include "vm_state.h"
+#include "../headers/execute.h"
+#include "../headers/parse.h"
+#include "../headers/vm_state.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -18,7 +18,12 @@ instruction_handler dispatch_table[NUM_OPCODES] = {
     [MOV] = mov,
     [LDR] = ldr,
     [STR] = str,
-    [JMP] = jmp
+    [JMP] = jmp,
+    [CMP] = cmp,
+    [JGT] = jgt,
+    [JLT] = jlt,
+    [JEQ] = jeq,
+    [JNE] = jne
 };
 
 void nop(struct vm_state* vm, struct instruction* instruction) {
@@ -27,8 +32,7 @@ void nop(struct vm_state* vm, struct instruction* instruction) {
 
 void add(struct vm_state* vm, struct instruction* instruction) {
     // bits 0-2 tell you whether the number is a register number or not
-    printf("add instruction running");
-    uint8_t arg_2_is_register = instruction->arg_info & 2;
+    uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
     uint8_t arg_3_is_register = instruction->arg_info & 1;
 
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
@@ -39,7 +43,7 @@ void add(struct vm_state* vm, struct instruction* instruction) {
 }
 
 void sub(struct vm_state* vm, struct instruction* instruction) {
-    uint8_t arg_2_is_register = instruction->arg_info & 2;
+    uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
     uint8_t arg_3_is_register = instruction->arg_info & 1;
 
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
@@ -50,7 +54,7 @@ void sub(struct vm_state* vm, struct instruction* instruction) {
 }
 
 void mul(struct vm_state* vm, struct instruction* instruction) {
-    uint8_t arg_2_is_register = instruction->arg_info & 2;
+    uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
     uint8_t arg_3_is_register = instruction->arg_info & 1;
 
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
@@ -61,7 +65,7 @@ void mul(struct vm_state* vm, struct instruction* instruction) {
 }
 
 void divide(struct vm_state* vm, struct instruction* instruction) {
-    uint8_t arg_2_is_register = instruction->arg_info & 2;
+    uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
     uint8_t arg_3_is_register = instruction->arg_info & 1;
 
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
@@ -72,7 +76,7 @@ void divide(struct vm_state* vm, struct instruction* instruction) {
 }
 
 void mov(struct vm_state* vm, struct instruction* instruction) {
-    uint8_t arg_2_is_register = instruction->arg_info & 1;
+    uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
 
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
 
@@ -81,7 +85,7 @@ void mov(struct vm_state* vm, struct instruction* instruction) {
 }
 
 void ldr(struct vm_state* vm, struct instruction* instruction) {
-    uint8_t arg_2_is_register = instruction->arg_info & 1;
+    uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
 
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
 
@@ -90,13 +94,13 @@ void ldr(struct vm_state* vm, struct instruction* instruction) {
 }
 
 void str(struct vm_state* vm, struct instruction* instruction) {
-    uint8_t arg_1_is_register = instruction->arg_info & 1;
-    uint8_t arg_2_is_register = instruction->arg_info & 2;
+    uint8_t arg_1_is_register = (instruction->arg_info >> 2) & 1;
+    uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
 
     uint64_t arg1 = arg_1_is_register ? vm->gp_registers[instruction->args[0]] : instruction->args[0];
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
 
-    vm->heap_memory[arg1] = vm->gp_registers[arg2];
+    vm->heap_memory[arg1] = arg2;
     ++vm->pc;
 }
 
@@ -104,11 +108,67 @@ void jmp(struct vm_state* vm, struct instruction* instruction) {
     vm->pc = instruction->args[0];
 }
 
+void cmp(struct vm_state* vm, struct instruction* instruction) {
+    uint8_t arg_1_is_register = (instruction->arg_info >> 2) & 1;
+    uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
+
+    uint64_t arg1 = arg_1_is_register ? vm->gp_registers[instruction->args[0]] : instruction->args[0];
+    uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
+
+    if (arg1 == arg2) vm->comparison_flags[0] = true;
+    else if (arg1 > arg2) {
+        vm->comparison_flags[0] = false;
+        vm->comparison_flags[1] = true;
+    }
+    else if (arg1 < arg2) {
+        vm->comparison_flags[0] = false;
+        vm->comparison_flags[2] = true;
+    }
+
+    ++vm->pc;
+}
+
+void jgt(struct vm_state* vm, struct instruction* instruction) {
+    if (vm->comparison_flags[1] == true) {
+        vm->pc = instruction->args[0];
+        reset_comparison_flags(vm);
+    } else {
+        ++vm->pc;
+    }
+}
+
+void jlt(struct vm_state* vm, struct instruction* instruction) {
+    if (vm->comparison_flags[2] == true) {
+        vm->pc = instruction->args[0];
+        reset_comparison_flags(vm);
+    } else {
+        ++vm->pc;
+    }
+
+}
+
+void jeq(struct vm_state* vm, struct instruction* instruction) {
+    if (vm->comparison_flags[0] == true) {
+        vm->pc = instruction->args[0];
+        reset_comparison_flags(vm);
+    } else {
+        ++vm->pc;
+    }
+}
+
+void jne(struct vm_state* vm, struct instruction* instruction) {
+    if (vm->comparison_flags[0] == false) {
+        vm->pc = instruction->args[0];
+        reset_comparison_flags(vm);
+    } else {
+        ++vm->pc;
+    }
+}
+
 void execute(struct vm_state* vm) {
     while (vm->pc < vm->instruction_count) {
         struct instruction current_instruction = vm->program[vm->pc];
         uint8_t opcode = current_instruction.opcode;
-        printf("about to dispatch: pc=%llu opcode=%d handler=%p\n", vm->pc, opcode, (void*)dispatch_table[opcode]);
         if (dispatch_table[opcode] == NULL) {
             printf("unknown opcode %d\n", opcode);
             return;
