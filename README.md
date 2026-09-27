@@ -1,5 +1,10 @@
 # Bytecode VM
 
+# What is this project?
+This project is a simple bytecode VM. It takes a source file in an assembly-like language, converts it into a binary format, which can then be read and executed by a virtual machine similar in nature to a real CPU.
+
+C, custom instruction set design, assembler/compiler pipeline, dispatch-table, interpreter, hash tables
+
 # If you're short on time
 Check out these sections, as I think they're worth reading the most:
 - [The symbol table redesign](DEBUGGING.md#symbol-table-layout)
@@ -60,9 +65,6 @@ If you want to rebuild, run `make clean` and then `make`/`make release` again.
 You may notice that running `make` or `make release` will come with some warnings to do with unused arguments or `control reaches
 end of non-void functions`. Rest assured that as long as you use syntactically correct programs there will be no issues. You can _always_
 trust users to use your program _exactly_ as **you** expected, right? Right..?
-
-# What is this project?
-This project is a simple bytecode VM. It takes a source file in an assembly-like language, converts it into a binary format, which can then be read and executed by a virtual machine similar in nature to a real CPU.
 
 # Motivation
 I thought this would pair nicely with my AArch64 kernel project, which goes from wrangling the CPU (especially getting virtual memory to work), to this project, which is a slightly different angle of processing the text
