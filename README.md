@@ -171,6 +171,7 @@ ADD r1, r2, r3 ; this is also a comment
 - No code validation. An incorrect program will cause the main program to crash.
 - Assumes you adhere to using 31 registers plus 256 `uint64_t` spaces in the virtual machine's memory.
 - Assumes you use the correct number of arguments.
+- Assumes your program is at most 256 lines long.
 - Assumes you use the correct type of argument (register/immediate) in the correct position.
 - Assumes that you do not use trailing whitespaces at the beginning of your source on any line.
 - Assumes that comments are a separate line that gets totally ignored.

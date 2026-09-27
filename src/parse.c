@@ -130,6 +130,7 @@ int operands_required(int opcode) {
     if (opcode == 11) return 1;
     if (opcode == 12) return 1;
     if (opcode == 13) return 1;
+    return -1;
 }
 
 // extract number from a larger string, start_index must be where the first numeric character is

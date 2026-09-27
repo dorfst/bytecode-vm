@@ -22,11 +22,11 @@ int main(int argc, char* argv[]) {
 
     printf("gp registers\n");
     for (int i = 0; i < 31; ++i) {
-        printf("%d\n", vm_state.gp_registers[i]);
+        printf("%lu\n", vm_state.gp_registers[i]);
     }
     printf("\n\n\nheap memory\n");
     for (int i = 0; i < 256; ++i) {
-        printf("%d\n", vm_state.heap_memory[i]);
+        printf("%lu\n", vm_state.heap_memory[i]);
     }
 
 
