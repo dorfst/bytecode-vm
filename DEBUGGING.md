@@ -7,107 +7,11 @@ Before the current solution to label resolution, I had a different idea of how i
 
 I was under the impression that labels would be resolved on the fly in the serialisation stage, where I scan for
 labels, and note `label_position - labels_encountered`, where `labels_encountered` is the number of labels not including the current
-one that have already been encountered. The reason for this is that I initially thought to have a list of `line` structs
-from which I would remove lines that are just labels, then shift everything one line up. That way, all that would be left are instructions.
-Forward references would require a second pass to resolve.
+one that have already been encountered. I was under the impression that in a list of lines I'd have to delete them for the final
+serialisation stage, which requires shifting where jump instructions point. As you can see, there's also just the option to ignore label lines
+with counters.
 
-### Example
-Let's say that you have a program like this:
-```
-0. label_1:
-1. ADD r1, r2, r3
-2. SUB r4, r2, #32
-3. JMP end
-4. label_2:
-5. DIV r1, #10, #2
-6. MOV r3, #0
-7. JMP label_1
-8. end:
-9. MUL r10, r3, r3
-```
-
-Ignore the fact that label_2 never gets reached in this program.
-
-I was under the impression that I would have the program in basically this sort of format (rather an array of `line` structs than
-the source strings themselves), where you see that the labels take up a line number as well as the instructions.
-
-I thought to perform an iterative process where the program transforms to
-
-```
-0. ADD r1, r2, r3
-1. SUB r4, r2, #32
-2. JMP end
-3. label_2:
-4. DIV r1, #10, #2
-5. MOV r3, #0
-6. JMP label_1
-7. end:
-8. MUL r10, r3, r3
-```
-
-to
-
-```
-0. ADD r1, r2, r3
-1. SUB r4, r2, #32
-2. JMP end
-3. DIV r1, #10, #2
-4. MOV r3, #0
-5. JMP label_1
-6. end:
-7. MUL r10, r3, r3
-```
-
-to
-
-```
-0. ADD r1, r2, r3
-1. SUB r4, r2, #32
-2. JMP end
-3. DIV r1, #10, #2
-4. MOV r3, #0
-5. JMP 0
-6. end:
-7. MUL r10, r3, r3
-```
-
-to
-
-```
-0. ADD r1, r2, r3
-1. SUB r4, r2, #32
-2. JMP end
-3. DIV r1, #10, #2
-4. MOV r3, #0
-5. JMP 0
-6. MUL r10, r3, r3
-```
-
-and finally,
-
-```
-0. ADD r1, r2, r3
-1. SUB r4, r2, #32
-2. JMP 6
-3. DIV r1, #10, #2
-4. MOV r3, #0
-5. JMP 0
-6. MUL r10, r3, r3
-```
-As you can see, the `end` label was initially on line 8 (0-indexed), but the final jump resolves to line/instruction 6 because two labels
-before it were encountered. You can see that the final result from the equation is correct.
-
-Why would I put this in a section about debugging and pitfalls, though? The reason is that this is complicated in two ways.
-
-Firstly, I'm counting labels as something that takes up space, and then removing it immediately after having a program counter
-value to which that label resolves, plus having to shift everything below that label
-one position up (or left if we're talking in array terms). It's unnecessary work.
-
-Secondly, resolving labels on the fly (i.e. forming the symbol table while modifying jump instructions) makes it just a little more complicated
-to solve forward references (references to a label before its definition), as you have to do two passes over the program in the serialisation stage, plus one for parsing,
-so three passes in total. In my current solution, it's cut down to two total, _and_ the separation of concerns is much cleaner.
-
-### The real solution
+### The solution
 The solution to this conundrum was:
 1. never count a label as something that takes up a line at all, and to think in terms of instructions rather than lines.
 2. form the symbol table fully in the parsing stage, and then resolve in the serialisation stage.
@@ -137,7 +41,7 @@ Just a note to make sure your test code actually tests correctly :)
 This one is quite an interesting one in my opinion because it can show how far a symptom can be from the cause
 of a bug.
 
-The bug starts in the `translate` function in `../src/serialise.c`. This function takes file names for the source and output file.
+The bug starts in the `translate` function in [`serialise.c`](src/serialise.c). This function takes file names for the source and output file.
 In this file, it creates two file pointers for the source and output respectively. To put it shortly, I forgot to run `fclose` on the file pointers,
 and that caused a big problem down the line.
 
@@ -223,14 +127,14 @@ These two bugs aren't really anything as major as the label resolution problem o
 at least somewhat amusing and would be something nice to close with.
 
 ### Circular Dependencies
-I had two headers `../headers/vm_state.h` and `../headers/execute.h` which `#include`d each other. They both had references
+I had two headers [`headers/vm_state.h`](headers/vm_state.h) and [`headers/execute.h`](headers/execute.h) which `#include`d each other. They both had references
 to structs which weren't defined in their own file. The compiler gave a warning:
 
 `
 warning: ‘struct vm_state’ declared inside parameter list will not be visible outside of this definition or declaration 
 `
 
-Resolution: put both structs in one header file and just make sure only one of them imports the other. `../headers/execute.h` includes `../headers/vm_state.h`,
+Resolution: put both structs in one header file and just make sure only one of them imports the other. `headers/execute.h` includes `headers/vm_state.h`,
 but not the other way round.
 
 This was sort of amusing, and to be honest I'm not even sure how I managed to do that.
@@ -239,4 +143,4 @@ This was sort of amusing, and to be honest I'm not even sure how I managed to do
 This one was very simple. I had an error `undefined reference to init_vm_state`. I looked at the code,
 and it seemed that I `#include`d everything properly, and that everything was spelt correctly.
 
-Turns out I just forgot to compile `../src/vm_state.c`. This is what Makefiles are for, people.
+Turns out I just forgot to compile [`src/vm_state.c`](src/vm_state.c). This is what Makefiles are for, people.

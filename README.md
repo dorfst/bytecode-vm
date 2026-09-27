@@ -1,5 +1,66 @@
 # Bytecode VM
 
+# If you're short on time
+Check out these sections, as I think they're worth reading the most:
+- [The symbol table redesign](DEBUGGING.md#symbol-table-layout)
+- [`parse.c`](src/parse.c) + [`serialise.c`](src/serialise.c) for the label resolution split
+- [`execute.c`](src/execute.c) for the dispatch table + the `execute()` loop
+- [the `fclose` bug](DEBUGGING.md#file-pointers)
+- [Limitations & assumptions](#limitations--assumptions)
+# How do I use this?
+The main program expects an already-existing source file and a name for the output file, as it will compile and then run the program.
+```bash
+make
+./output/vm source_path/program.txt destination_path/program.bc
+```
+or alternatively, using one of the examples
+```bash
+make
+./output/vm examples/example_source.txt destination_path/program.bc
+```
+
+# A working example
+From the root of the project, try running `sum_to_five.txt`
+
+```bash
+make
+./output/vm examples/sum_to_five.txt output/sum_to_five.bc
+```
+
+You should get this output:
+```
+gp registers
+15
+6
+0
+0
+.
+.
+.
+0 (all zeroes)
+heap memory
+0
+0
+0
+.
+.
+.
+0
+0
+0 (all zeroes)
+```
+
+You can alternatively use `make release`, since `make` on its own produces a debug build by default.
+
+If your system does not have `gcc`, which is what the Makefile expects by default, you can override `CC` and `CFLAGS` manually
+to use whatever compiler you have available.
+
+If you want to rebuild, run `make clean` and then `make`/`make release` again.
+
+You may notice that running `make` or `make release` will come with some warnings to do with unused arguments or `control reaches
+end of non-void functions`. Rest assured that as long as you use syntactically correct programs there will be no issues. You can _always_
+trust users to use your program _exactly_ as **you** expected, right? Right..?
+
 # What is this project?
 This project is a simple bytecode VM. It takes a source file in an assembly-like language, converts it into a binary format, which can then be read and executed by a virtual machine similar in nature to a real CPU.
 
@@ -15,29 +76,6 @@ It's a very simple motivation, but ultimately I wanted to become a better progra
 I have definitely done some suboptimal things in this project but it definitely got me more comfortable about
 writing full programs in C, as well as experiencing first-hand the problems that can come from a language that
 is as permissive as C.
-
-# How do I use this?
-The main program expects an already-existing source file and a name for the output file, as it will compile and then run the program.
-```bash
-make
-./output/vm source_path/program.txt destination_path/program.bc
-```
-or alternatively, using one of the examples
-```bash
-make
-./output/vm examples/example_source.txt destination_path/program.bc
-```
-
-You can alternatively use `make release`, since `make` on its own produces a debug build by default.
-
-If your system does not have `gcc`, which is what the Makefile expects by default, you can override `CC` and `CFLAGS` manually
-to use whatever compiler you have available.
-
-If you want to rebuild, run `make clean` and then `make`/`make release` again.
-
-You may notice that running `make` or `make release` will come with some warnings to do with unused arguments or `control reaches
-end of non-void functions`. Rest assured that as long as you use syntactically correct programs there will be no issues. You can _always_
-trust users to use your program _exactly_ as **you** expected, right? Right..?
 
 ## Syntax
 The language is an assembly-like language. It takes the following format:
@@ -134,37 +172,6 @@ ADD r1, r2, r3 ; this is also a comment
 - Assumes you use the correct type of argument (register/immediate) in the correct position.
 - Assumes that you do not use trailing whitespaces at the beginning of your source on any line.
 - Assumes that comments are a separate line that gets totally ignored.
-
-# A working example
-From the root of the project, try running `sum_to_five.txt`
-
-```bash
-make
-./output/vm examples/sum_to_five.txt output/sum_to_five.bc
-```
-
-You should get this output:
-```
-gp registers
-15
-6
-0
-0
-.
-.
-.
-0 (all zeroes)
-heap memory
-0
-0
-0
-.
-.
-.
-0
-0
-0 (all zeroes)
-```
 
 # Components
 ## 1. Parsing
@@ -296,7 +303,7 @@ choosing an operation handler efficient since there is no condition checking in 
 This project wasn't a smooth ride, that's for sure. A lot of problems came up on the way, and I wanted to share ones that I thought
 were noteworthy. The purpose of this section is to see what sort of problems came up, and how I figured them out
 to see my thought process throughout this project. It is quite a long section, so I put it in a separate file called
-[`DEBUGGING.md`](./DEBUGGING.md).
+[`DEBUGGING.md`](DEBUGGING.md).
 
 # Conclusion
 This was quite an interesting project and definitely out of my comfort zone, especially since dealing with strings in C
