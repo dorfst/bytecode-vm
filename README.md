@@ -207,7 +207,7 @@ __________________________________________________________________________
 The opcode is 8 bits large. This is excessive, considering that I only have 14 instructions, but it does create a convenient alignment. This theoretically could be cut down to 4 bits instead.
 
 ##### Argument Information 
-The argument info field is 8 bits large. At the moment it contains 2 bits for arity (which, given the design of the actual execution portion, is redundant), and 3 bits as register flags, i.e. is this argument referring to a register or an immediate value? This could theoretically be cut down to 3 bits, or quite possibly 4 in conjunction with the opcode if I wanted to have convenient alignment.
+The argument info field is 8 bits large. At the moment it contains 2 bits for arity (which, given the design of the actual execution portion, is redundant), and 3 bits as register flags, i.e. is this argument referring to a register or an immediate value? This could theoretically be cut down to 3 bits, and would quite conveniently align to 1 byte with the opcode.
 
 ##### Arguments 
 All arguments in their _final form_ are interpreted as 64-bit unsigned integers. Whether they are immediate values or refer to a register is decided by the argument information in the instruction. Here is where the most space could be saved. The simplest solution is to restrict the size of the arguments for every instruction, especially since it is very unlikely in any program that one would be using extremely large immediate values that would warrant so many bits. 
