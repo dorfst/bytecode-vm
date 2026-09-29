@@ -14,6 +14,7 @@ Check out these sections, as I think they're worth reading the most:
 - [Limitations & assumptions](#limitations--assumptions)
 # How do I use this?
 The main program expects an already-existing source file and a name for the output file, as it will compile and then run the program.
+
 ```bash
 make
 ./output/vm source_path/program.txt destination_path/program.bc
@@ -31,6 +32,11 @@ From the root of the project, try running `sum_to_five.txt`
 make
 ./output/vm examples/sum_to_five.txt output/sum_to_five.bc
 ```
+Or, rather
+```bash
+./quick-test.sh
+```
+They are equivalent.
 
 You should get this output:
 ```
@@ -63,12 +69,11 @@ to use whatever compiler you have available.
 If you want to rebuild, run `make clean` and then `make`/`make release` again.
 
 You may notice that running `make` or `make release` will come with exactly one warning:
-```bash
+```
 src/execute.c: In function ‘nop’:
 src/execute.c:29:51: warning: unused parameter ‘instruction’ [-Wunused-parameter]
    29 | void nop(struct vm_state* vm, struct instruction* instruction) {
       |                               ~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
-
 ```
 This is necessary as this function is present in the dispatch table used in the execution loop, which requires
 the functions to have identical signatures.
