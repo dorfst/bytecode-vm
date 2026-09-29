@@ -187,6 +187,7 @@ ADD r1, r2, r3 ; this is also a comment
 - Assumes you adhere to using 31 registers plus 256 `uint64_t` spaces in the virtual machine's memory.
 - Assumes you use the correct number of arguments.
 - Assumes your program is at most 256 lines long.
+- Assumes that you don't use duplicate labels in your program. Otherwise, only the first instance of that label will work.
 - Assumes you use the correct type of argument (register/immediate) in the correct position.
 - Assumes that you do not use trailing whitespaces at the beginning of your source on any line.
 - Assumes that comments are a separate line that gets totally ignored.
