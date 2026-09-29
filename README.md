@@ -62,8 +62,18 @@ to use whatever compiler you have available.
 
 If you want to rebuild, run `make clean` and then `make`/`make release` again.
 
-You may notice that running `make` or `make release` will come with some warnings to do with unused arguments or `control reaches
-end of non-void functions`. Rest assured that as long as you use syntactically correct programs there will be no issues. You can _always_
+You may notice that running `make` or `make release` will come with exactly one warning:
+```bash
+src/execute.c: In function ‘nop’:
+src/execute.c:29:51: warning: unused parameter ‘instruction’ [-Wunused-parameter]
+   29 | void nop(struct vm_state* vm, struct instruction* instruction) {
+      |                               ~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+
+```
+This is necessary as this function is present in the dispatch table used in the execution loop, which requires
+the functions to have identical signatures.
+
+Rest assured that as long as you use syntactically correct programs there will be no issues. You can _always_
 trust users to use your program _exactly_ as **you** expected, right? Right..?
 
 # Motivation
@@ -91,7 +101,7 @@ or optionally
 operation arg1 arg2 arg3
 ```
 
-`arg1`, `arg2` and `arg3` can either be a register from `r0`-`r30`, or they can be an immediate value up to 2^64, e.g. `#16384`
+`arg1`, `arg2` and `arg3` can either be a register from `r0`-`r30`, or they can be an immediate value up to 2^64 - 1, e.g. `#16384`
 
 The syntax with the commas is preferred stylistically, but either works.
 
@@ -202,7 +212,7 @@ The argument info field is 8 bits large. At the moment it contains 2 bits for ar
 ##### Arguments 
 All arguments in their _final form_ are interpreted as 64-bit unsigned integers. Whether they are immediate values or refer to a register is decided by the argument information in the instruction. Here is where the most space could be saved. The simplest solution is to restrict the size of the arguments for every instruction, especially since it is very unlikely in any program that one would be using extremely large immediate values that would warrant so many bits. 
 
-Another solution is to determine how many bits an immediate value could have (at the very least 4 bits since that's the number of registers in our virtual machine, much like the AArch64 architecture) based on the instruction, i.e. instructions that take fewer arguments could potentially take advantage of larger immediates if it were appropriate to do so, or similarly take away bits for immediate values and potentially use them in argument information if instructions were able to have some extra configuration or variation that would warrant extra argument information.
+Another solution is to determine how many bits an immediate value could have (at the very least 5 bits since that's the number of registers in our virtual machine, much like the AArch64 architecture) based on the instruction, i.e. instructions that take fewer arguments could potentially take advantage of larger immediates if it were appropriate to do so, or similarly take away bits for immediate values and potentially use them in argument information if instructions were able to have some extra configuration or variation that would warrant extra argument information.
 
 4-byte arguments would certainly reduce the instruction size to 14 bytes total.
 

@@ -82,7 +82,7 @@ int search_hash_table(struct hash_table_node* hash_table[], char* label) {
 }
 
 int match_to_opcode(char* string) {
-    for (int i = 0; i < sizeof(instructions) / sizeof(instructions[0]); ++i) {
+    for (uint64_t i = 0; i < sizeof(instructions) / sizeof(instructions[0]); ++i) {
         if (strcmp(string, instructions[i]) == 0) {
             return i;
         }
@@ -136,11 +136,9 @@ int operands_required(int opcode) {
 // extract number from a larger string, start_index must be where the first numeric character is
 uint64_t get_number(char* buffer, int start_index) {
     char current_char = buffer[start_index];
-    int num_of_chars = 0;
     int current_index = start_index;
 
     while (current_char >= 48 && current_char <= 57) {
-        ++num_of_chars;
         ++current_index;
         current_char = buffer[current_index];
     }

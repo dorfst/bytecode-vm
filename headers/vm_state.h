@@ -14,7 +14,7 @@ struct vm_state {
     uint64_t gp_registers[31];
     uint64_t heap_memory[256];
     uint64_t pc;
-    int instruction_count;
+    uint64_t instruction_count;
     struct instruction* program;
     // EQ, GT, LT
     bool comparison_flags[3];
