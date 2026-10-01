@@ -78,8 +78,7 @@ src/execute.c:29:51: warning: unused parameter ‘instruction’ [-Wunused-param
 This is necessary as this function is present in the dispatch table used in the execution loop, which requires
 the functions to have identical signatures.
 
-Rest assured that as long as you use syntactically correct programs there will be no issues. You can _always_
-trust users to use your program _exactly_ as **you** expected, right? Right..?
+Rest assured that as long as you use syntactically correct programs there will be no issues.
 
 # Motivation
 I thought this would pair nicely with my AArch64 kernel project, which goes from wrangling the CPU (especially getting virtual memory to work), to this project, which is a slightly different angle of processing the text
@@ -187,6 +186,7 @@ ADD r1, r2, r3 ; this is also a comment
 - Assumes you adhere to using 31 registers plus 256 `uint64_t` spaces in the virtual machine's memory.
 - Assumes you use the correct number of arguments.
 - Assumes your program is at most 256 lines long.
+- Assumes there are no blank lines in the text file.
 - Assumes that you don't use duplicate labels in your program. Otherwise, only the first instance of that label will work.
 - Assumes you use the correct type of argument (register/immediate) in the correct position.
 - Assumes that you do not use trailing whitespaces at the beginning of your source on any line.
@@ -213,7 +213,7 @@ __________________________________________________________________________
 The opcode is 8 bits large. This is excessive, considering that I only have 14 instructions, but it does create a convenient alignment. This theoretically could be cut down to 4 bits instead.
 
 ##### Argument Information 
-The argument info field is 8 bits large. At the moment it contains 2 bits for arity (which, given the design of the actual execution portion, is redundant), and 3 bits as register flags, i.e. is this argument referring to a register or an immediate value? This could theoretically be cut down to 3 bits, and would quite conveniently align to 1 byte with the opcode.
+The argument info field is 8 bits large. At the moment it contains 2 bits for arity (which, given the design of the actual execution portion, is redundant), and 3 bits as register flags, i.e. is this argument referring to a register or an immediate value? This could theoretically be cut down to 3 bits. If I wanted to have convenient alignment I could have just one extra padding bit.
 
 ##### Arguments 
 All arguments in their _final form_ are interpreted as 64-bit unsigned integers. Whether they are immediate values or refer to a register is decided by the argument information in the instruction. Here is where the most space could be saved. The simplest solution is to restrict the size of the arguments for every instruction, especially since it is very unlikely in any program that one would be using extremely large immediate values that would warrant so many bits. 
