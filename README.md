@@ -3,6 +3,8 @@
 # What is this project?
 This project is a simple bytecode VM. It takes a source file in an assembly-like language, converts it into a binary format, which can then be read and executed by a virtual machine similar in nature to a real CPU.
 
+This project gets updated from time-to-time, so what you see is not necessarily final.
+
 C, custom instruction set design, assembler/compiler pipeline, dispatch-table, interpreter, hash tables
 
 # If you're short on time
