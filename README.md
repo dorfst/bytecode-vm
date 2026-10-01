@@ -192,6 +192,8 @@ ADD r1, r2, r3 ; this is also a comment
 - Assumes that you do not use trailing whitespaces at the beginning of your source on any line.
 - Assumes that comments are a separate line that gets totally ignored.
 
+This list is not necessarily exhaustive. There may have been things I've missed or only mentioned in the main document body.
+
 # Components
 ## 1. Parsing
 The first stage that happens is parsing. What happens in parsing is two-fold: the first thing to be done is to take a line of code and compress the information in it to a structure that is easy to use for when it is time to convert to a binary format, and the second is to form a symbol table, where jump instructions can use a label to denote a position to jump to rather than using line numbers.
