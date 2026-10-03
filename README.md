@@ -70,20 +70,8 @@ to use whatever compiler you have available.
 
 If you want to rebuild, run `make clean` and then `make`/`make release` again.
 
-You may notice that running `make` or `make release` will come with exactly one warning:
-```
-src/execute.c: In function ‘nop’:
-src/execute.c:29:51: warning: unused parameter ‘instruction’ [-Wunused-parameter]
-   29 | void nop(struct vm_state* vm, struct instruction* instruction) {
-      |                               ~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
-```
-This is necessary as this function is present in the dispatch table used in the execution loop, which requires
-the functions to have identical signatures.
-
-Rest assured that as long as you use syntactically correct programs there will be no issues.
-
 # Motivation
-I thought this would pair nicely with my AArch64 kernel project, which goes from wrangling the CPU (especially getting virtual memory to work), to this project, which is a slightly different angle of processing the text
+I thought this would pair nicely with my [AArch64 kernel project](https://github.com/dorfst/aarch64-kernel), which goes from wrangling the CPU (especially getting virtual memory to work), to this project, which is a slightly different angle of processing the text
 made to do that.
 
 To be honest, I wanted to do something that I had considered quite difficult, and I was certainly right in that prediction,
@@ -126,6 +114,8 @@ The syntax with the commas is preferred stylistically, but either works.
 - `JLT label` - jump to `label` if `LT` flag set to `true`
 - `JEQ label` - jump to `label` if `EQ` flag set to `true`
 - `JNE label` - jump to `label` if `EQ` flag set to `false`
+
+Conditional jumps and comparison operators reset the comparison flags in the virtual machine.
 
 ### Labels
 Forming a label is quite simple. There are no restrictions on starting or ending characters, but must follow the format
@@ -182,16 +172,16 @@ but you _cannot_ do
 ```
 ADD r1, r2, r3 ; this is also a comment
 ```
+rather, this makes the whole line a comment, silently removing the instruction from the program.
 
 ## Limitations & Assumptions
-- No code validation. An incorrect program will cause the main program to crash.
-- Assumes you adhere to using 31 registers plus 256 `uint64_t` spaces in the virtual machine's memory.
-- Assumes you use the correct number of arguments.
-- Assumes your program is at most 256 lines long.
+- Limited code validation. Checks register bounds, memory bounds, and unknown mnemonics, missing files and division by zero.
+- Assumes you use the correct number of arguments. This is not checked.
+- Assumes your program is at most 256 instructions long.
 - Assumes there are no blank lines in the text file.
 - Assumes that you don't use duplicate labels in your program. Otherwise, only the first instance of that label will work.
 - Assumes you use the correct type of argument (register/immediate) in the correct position.
-- Assumes that you do not use trailing whitespaces at the beginning of your source on any line.
+- Assumes that you do not use leading whitespaces at the beginning of your source on any line.
 - Assumes that comments are a separate line that gets totally ignored.
 
 This list is not necessarily exhaustive. There may have been things I've missed or only mentioned in the main document body.
@@ -233,7 +223,7 @@ I will explain how jump instructions are a special case when it comes to argumen
 #### How does an instruction get parsed?
 The parser expects the instruction to be formatted in the order of `operation`, `argument 1`, `argument 2` and `argument 3`. Currently, any sort of formatting where the instruction is _not_ at the beginning of the line (i.e. spaces or tabs before the first instruction character) will not work with the parser.
 
-An operation gets matched to an opcode (a number identifying the instruction) with a series of `if else` statements. As of now, this could be improved by using a `case switch` statement so that this gets compressed into a jump table in order to improve performance.
+An operation gets matched to an opcode (a number identifying the instruction) by a string comparison over an array of instruction mnemonics.
 
 Operands (arguments 1-3) can be either a register or an immediate value, and when writing source code this is differentiated by an `r` prefix to denote a particular register number, and a `#` prefix for immediate values.
 The parser will only scan for the number of arguments required once it has identified the operation, i.e. arithmetic operations require three operands, and so it will look for three, but memory operations require two arguments and the parser will only search for two.
@@ -241,6 +231,8 @@ In the event where an instruction does not need all three arguments, the unused 
 
 ##### Jump Instructions
 The description above refers to how almost every instruction gets parsed, but jump instructions are different because their argument does not take a numeric form.
+
+Conditional jumps reset the comparison flags in the virtual machine.
 
 Every line of source gets put into a `line` struct, which contains the opcode, arguments, register flags (i.e. which arguments are a register number), an `is_label` flag, as well as a `label` attribute which
 contains the string value of the label.
@@ -336,6 +328,6 @@ All I really have left to say is that what I would do differently is:
 - consider a higher level language which compiles to this instruction set. A *much* bigger undertaking but worth exploring.
 - more elaborate syntax rules (e.g. allowing comments on the same line as instructions) and generally a better implementation of said rules.
 - design a more storage-efficient instruction format
-- include validation (at the moment it trusts that the user will create a syntactically correct program)
+- more elaborate validation
 
 

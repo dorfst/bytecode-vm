@@ -165,9 +165,7 @@ void cmp(struct vm_state* vm, struct instruction* instruction) {
     uint64_t arg1 = arg_1_is_register ? vm->gp_registers[instruction->args[0]] : instruction->args[0];
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
 
-    vm->comparison_flags[0] = false;
-    vm->comparison_flags[1] = false;
-    vm->comparison_flags[2] = false;
+    reset_comparison_flags(vm);
 
     if (arg1 == arg2) vm->comparison_flags[0] = true;
     else if (arg1 > arg2) {
