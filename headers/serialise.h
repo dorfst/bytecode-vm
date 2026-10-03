@@ -1,7 +1,3 @@
-//
-// Created by dorian on 09/09/2026.
-//
-
 #ifndef SERIALISE
 #define SERIALISE
 #include "parse.h"

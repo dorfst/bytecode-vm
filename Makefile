@@ -1,9 +1,11 @@
 CC ?= gcc
 SRC_DIR := src
+HDR_DIR := headers
 OUTPUT_DIR := output
 TARGET := $(OUTPUT_DIR)/vm
 
 SRCS := $(wildcard $(SRC_DIR)/*.c)
+HDRS := $(wildcard $(HDR_DIR)/*.h)
 
 CFLAGS ?= -Wall -Wextra
 
@@ -20,7 +22,7 @@ debug: $(TARGET)
 release: CFLAGS += -O2
 release: $(TARGET)
 
-$(TARGET): $(SRCS) | $(OUTPUT_DIR)
+$(TARGET): $(SRCS) $(HDRS) | $(OUTPUT_DIR)
 	$(CC) $(CFLAGS) $(SRCS) -o $(TARGET)
 
 $(OUTPUT_DIR):

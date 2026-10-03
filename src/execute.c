@@ -26,7 +26,23 @@ instruction_handler dispatch_table[NUM_OPCODES] = {
     [JNE] = jne
 };
 
+
+void register_in_bounds(uint64_t number, bool is_register) {
+    if (number > 30 && is_register) {
+        fprintf(stderr, "register number out of bounds\n");
+        exit(1);
+    }
+}
+
+void memory_location_in_bounds(uint64_t number) {
+    if (number > 255) {
+        fprintf(stderr, "memory location out of bounds\n");
+        exit(1);
+    }
+}
+
 void nop(struct vm_state* vm, struct instruction* instruction) {
+    (void)instruction; // remove compiler warning
     ++vm->pc;
 }
 
@@ -34,6 +50,10 @@ void add(struct vm_state* vm, struct instruction* instruction) {
     // bits 0-2 tell you whether the number is a register number or not
     uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
     uint8_t arg_3_is_register = instruction->arg_info & 1;
+
+    register_in_bounds(instruction->args[0], true);
+    register_in_bounds(instruction->args[1], arg_2_is_register);
+    register_in_bounds(instruction->args[2], arg_3_is_register);
 
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
     uint64_t arg3 = arg_3_is_register ? vm->gp_registers[instruction->args[2]] : instruction->args[2];
@@ -46,6 +66,10 @@ void sub(struct vm_state* vm, struct instruction* instruction) {
     uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
     uint8_t arg_3_is_register = instruction->arg_info & 1;
 
+    register_in_bounds(instruction->args[0], true);
+    register_in_bounds(instruction->args[1], arg_2_is_register);
+    register_in_bounds(instruction->args[2], arg_3_is_register);
+
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
     uint64_t arg3 = arg_3_is_register ? vm->gp_registers[instruction->args[2]] : instruction->args[2];
 
@@ -56,6 +80,10 @@ void sub(struct vm_state* vm, struct instruction* instruction) {
 void mul(struct vm_state* vm, struct instruction* instruction) {
     uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
     uint8_t arg_3_is_register = instruction->arg_info & 1;
+
+    register_in_bounds(instruction->args[0], true);
+    register_in_bounds(instruction->args[1], arg_2_is_register);
+    register_in_bounds(instruction->args[2], arg_3_is_register);
 
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
     uint64_t arg3 = arg_3_is_register ? vm->gp_registers[instruction->args[2]] : instruction->args[2];
@@ -68,8 +96,17 @@ void divide(struct vm_state* vm, struct instruction* instruction) {
     uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
     uint8_t arg_3_is_register = instruction->arg_info & 1;
 
+    register_in_bounds(instruction->args[0], true);
+    register_in_bounds(instruction->args[1], arg_2_is_register);
+    register_in_bounds(instruction->args[2], arg_3_is_register);
+
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
     uint64_t arg3 = arg_3_is_register ? vm->gp_registers[instruction->args[2]] : instruction->args[2];
+
+    if (arg3 == 0) {
+        fprintf(stderr, "division by zero\n");
+        exit(1);
+    }
 
     vm->gp_registers[instruction->args[0]] = (uint64_t)(arg2 / arg3);
     ++vm->pc;
@@ -77,6 +114,9 @@ void divide(struct vm_state* vm, struct instruction* instruction) {
 
 void mov(struct vm_state* vm, struct instruction* instruction) {
     uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
+
+    register_in_bounds(instruction->args[0], true);
+    register_in_bounds(instruction->args[1], arg_2_is_register);
 
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
 
@@ -87,7 +127,9 @@ void mov(struct vm_state* vm, struct instruction* instruction) {
 void ldr(struct vm_state* vm, struct instruction* instruction) {
     uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
 
+    register_in_bounds(instruction->args[1], arg_2_is_register);
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
+    memory_location_in_bounds(arg2);
 
     vm->gp_registers[instruction->args[0]] = vm->heap_memory[arg2];
     ++vm->pc;
@@ -97,8 +139,13 @@ void str(struct vm_state* vm, struct instruction* instruction) {
     uint8_t arg_1_is_register = (instruction->arg_info >> 2) & 1;
     uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
 
+    register_in_bounds(instruction->args[0], arg_1_is_register);
+    register_in_bounds(instruction->args[1], arg_2_is_register);
+
     uint64_t arg1 = arg_1_is_register ? vm->gp_registers[instruction->args[0]] : instruction->args[0];
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];
+
+    memory_location_in_bounds(arg1);
 
     vm->heap_memory[arg1] = arg2;
     ++vm->pc;
@@ -111,6 +158,9 @@ void jmp(struct vm_state* vm, struct instruction* instruction) {
 void cmp(struct vm_state* vm, struct instruction* instruction) {
     uint8_t arg_1_is_register = (instruction->arg_info >> 2) & 1;
     uint8_t arg_2_is_register = (instruction->arg_info >> 1) & 1;
+
+    register_in_bounds(instruction->args[0], arg_1_is_register);
+    register_in_bounds(instruction->args[1], arg_2_is_register);
 
     uint64_t arg1 = arg_1_is_register ? vm->gp_registers[instruction->args[0]] : instruction->args[0];
     uint64_t arg2 = arg_2_is_register ? vm->gp_registers[instruction->args[1]] : instruction->args[1];

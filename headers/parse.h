@@ -1,7 +1,3 @@
-//
-// Created by dorian on 23/08/2026.
-//
-
 #ifndef PARSE
 #define PARSE
 #include <stdint.h>

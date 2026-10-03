@@ -1,0 +1,2 @@
+; ERROR EXAMPLE: jumping to a label that is never defined
+JMP finish

@@ -1,0 +1,2 @@
+; ERROR EXAMPLE: mnemonics must be uppercase (this is "mov", not "MOV")
+mov r1, #5

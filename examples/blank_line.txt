@@ -1,0 +1,4 @@
+; ERROR EXAMPLE: blank lines are not supported (see the line between the two MOVs)
+MOV r1, #1
+
+MOV r2, #2

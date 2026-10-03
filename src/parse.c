@@ -96,7 +96,7 @@ char* get_instruction(char* buffer) {
     int current_char = 0;
 
     while (buffer[current_char] != '\0') {
-        if (buffer[current_char] == ' ') {
+        if (buffer[current_char] == ' ' || buffer[current_char] == '\n' || buffer[current_char] == '\r') {
             break;
         }
         ++current_char;
@@ -225,7 +225,11 @@ struct line parse_line(char* buffer, int* line_number) {
     }
     int opcode = get_opcode(buffer);
     line.opcode = opcode;
-    if (opcode != 8 && opcode < 10) {
+    if (opcode == -1) {
+        fprintf(stderr, "unknown instruction: %s", buffer);
+        exit(1);
+    }
+    else if (opcode != 8 && opcode < 10) {
         get_operands(buffer, opcode, &line);
     }
     else if (opcode == 8 || opcode >= 10) {

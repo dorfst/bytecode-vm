@@ -1,0 +1,2 @@
+; ERROR EXAMPLE: there is no r31, the registers are r0-r30
+MOV r31, #5

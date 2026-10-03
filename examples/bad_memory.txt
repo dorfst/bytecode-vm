@@ -1,0 +1,2 @@
+; ERROR EXAMPLE: heap memory has 256 slots (0-255), so address 256 is out of bounds
+LDR r0, #256

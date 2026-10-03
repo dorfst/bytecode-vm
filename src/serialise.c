@@ -34,8 +34,13 @@ int serialise_line(struct line* line, FILE* fp) {
             uint8_t one_arg = 1 << 3;
             fwrite(&one_arg, sizeof(uint8_t), 1, fp);
 
-            uint64_t line_to_jump_to = (uint64_t)search_hash_table(symbol_table, line->label);
-            fwrite(&line_to_jump_to, sizeof(uint64_t), 1, fp);
+            int line_to_jump_to = search_hash_table(symbol_table, line->label);
+            if (line_to_jump_to == -1) {
+                fprintf(stderr, "failed to find label %s\n", line->label);
+                exit(1);
+            }
+            uint64_t line_jump_to = (uint64_t)line_to_jump_to;
+            fwrite(&line_jump_to, sizeof(uint64_t), 1, fp);
 
             uint64_t zero_uint64 = 0;
             fwrite(&zero_uint64, sizeof(uint64_t), 1, fp);
@@ -66,13 +71,17 @@ void translate(const char* source, const char* out) {
 
     FILE* fp = fopen(source, "r");
     if (fp == NULL) {
-        perror("failed to open");
-        return;
+        perror("failed to open source");
+        exit(1);
     }
     int line_number_parsing = 0;
     int line_number = 0;
 
     FILE* output = fopen(out, "wb");
+    if (output == NULL) {
+        perror("failed to open output");
+        exit(1);
+    }
 
     char line[256];
     while (fgets(line, sizeof(line), fp) != NULL) {
@@ -80,6 +89,10 @@ void translate(const char* source, const char* out) {
         if (!instruction.is_label && !instruction.is_comment) {
             program[line_number] = instruction;
             ++line_number;
+        }
+        if (line_number >= 256) {
+            fprintf(stderr, "program too long\n");
+            exit(1);
         }
     }
 
