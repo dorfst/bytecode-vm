@@ -19,7 +19,7 @@ The main program expects an already-existing source file and a name for the outp
 
 ```bash
 make
-./output/vm source_path/program.txt destination_path/program.bc
+./output/vm <source>.txt <destination>.bc
 ```
 or alternatively, using one of the examples
 ```bash

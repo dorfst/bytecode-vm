@@ -22,9 +22,12 @@ void load_program(struct vm_state* vm_state, FILE* bytecode_file) {
 
     while (current_instruction_number < instructions) {
         struct instruction* instr = &vm_state->program[current_instruction_number];
-        fread(&instr->opcode, sizeof(uint8_t), 1, bytecode_file);
-        fread(&instr->arg_info, sizeof(uint8_t), 1, bytecode_file);
-        fread(instr->args, sizeof(uint64_t), 3, bytecode_file);
+        if (fread(&instr->opcode, sizeof(uint8_t), 1, bytecode_file) != 1 ||
+        fread(&instr->arg_info, sizeof(uint8_t), 1, bytecode_file) != 1 ||
+        fread(instr->args, sizeof(uint64_t), 3, bytecode_file) != 3) {
+            fprintf(stderr, "bytecode file corrupted\n");
+            exit(1);
+        }
         current_instruction_number++;
     }
 }
